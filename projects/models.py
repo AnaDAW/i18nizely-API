@@ -24,7 +24,7 @@ class Collaborator(models.Model):
 
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='collaborating_projects')
     project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='collaborators')
-    roles = ArrayField(models.IntegerField(choices=Role.choices), max_length=3)
+    roles = ArrayField(models.IntegerField(choices=Role.choices), max_length=3, default=4)
 
     class Meta:
         unique_together = ('user', 'project')
