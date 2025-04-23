@@ -28,10 +28,9 @@ class CollaboratorCreateSerializer(ModelSerializer):
             raise ValidationError('The owner of the project can\'t be a collaborator.')
         return value
 
-    def validate_name(self, value):
-        project = self.context['request'].parser_context['kwargs'].get('project_pk')
-        if Collaborator.objects.filter(name=value, project=project).exists():
-            raise ValidationError('Key with this name already exists.')
+    def validate_roles(self, value):
+        if 1 in value:
+            return [1]
         return value
 
 

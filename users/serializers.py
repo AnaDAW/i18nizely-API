@@ -52,7 +52,7 @@ class UserCreateSerializer(ModelSerializer):
 class UserDetailSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name']
+        fields = ['id', 'first_name', 'last_name', 'image']
 
 
 class NotificationSerializer(ModelSerializer):

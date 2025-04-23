@@ -9,7 +9,7 @@ class Translation(models.Model):
     is_reviewed = models.BooleanField(default=False)
     reviewed_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='review_set')
     reviewed_at = models.DateTimeField(null=True, blank=True)
-    created_by = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    created_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(default=datetime.now)
 
@@ -30,7 +30,7 @@ class Version(models.Model):
 class Comment(models.Model):
     text = models.TextField()
     translation = models.ForeignKey('translations.Translation', on_delete=models.CASCADE, related_name='comments')
-    created_by = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    created_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

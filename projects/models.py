@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 
 
 class Project(models.Model):
@@ -6,7 +7,7 @@ class Project(models.Model):
     description = models.TextField(blank=True)
     created_by = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='created_projects')
     main_language = models.CharField(max_length=2)
-    languages = models.JSONField()
+    languages = ArrayField(models.CharField(max_length=2))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -23,10 +24,10 @@ class Collaborator(models.Model):
 
     user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='collaborating_projects')
     project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='collaborators')
-    role = models.IntegerField(choices=Role.choices)
+    roles = ArrayField(models.IntegerField(choices=Role.choices), max_length=3)
 
     class Meta:
-        unique_together = ('user', 'project', 'role')
+        unique_together = ('user', 'project')
 
 
 class Record(models.Model):
