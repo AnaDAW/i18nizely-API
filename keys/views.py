@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.viewsets import GenericViewSet
-from rest_framework.mixins import CreateModelMixin, UpdateModelMixin, DestroyModelMixin
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin
 from rest_framework.permissions import IsAuthenticated
 
 from projects.permissions import IsAdminOrDeveloper
@@ -9,7 +9,7 @@ from .models import Key
 from .serializers import KeySerializer
 
 
-class KeyViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, DestroyModelMixin):
+class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin):
     serializer_class = KeySerializer
     permission_classes = [IsAuthenticated, IsAdminOrDeveloper]
 

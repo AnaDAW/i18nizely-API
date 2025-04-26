@@ -3,13 +3,21 @@ from rest_framework.mixins import ListModelMixin, DestroyModelMixin
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from django.db.models import Value
+from django.db.models.functions import Concat
 
 from .models import User, Notification
 from .serializers import UserCreateSerializer, UserDetailSerializer, UserSerializer, NotificationSerializer
 
 
 class UserViewSet(ModelViewSet):
-    queryset = User.objects.all()
+    def get_queryset(self):
+        name = self.request.query_params.get('name')
+        if self.action == 'list' and name:
+            return User.objects.annotate(
+                name=Concat('first_name', Value(' '), 'last_name')
+            ).filter(name__icontains=name)
+        return User.objects.all()
 
     def get_serializer_class(self):
         if self.action == 'create':
