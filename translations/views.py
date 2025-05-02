@@ -9,7 +9,7 @@ from keys.models import Key
 from .permissions import IsCommentOwner
 from .models import Translation, Version, Comment
 from projects.models import Record
-from .serializers import TranslationReviewSerializer, TranslationSerializer, VersionSerializer, CommentSerializer
+from .serializers import TranslationCreateSerializer, TranslationReviewSerializer, TranslationSerializer, VersionSerializer, CommentSerializer
 from projects.permissions import IsAdminOrTranslator, IsAnyRole
 
 
@@ -48,11 +48,18 @@ class TranslationViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin):
                 user=self.request.user,
                 project=instance.key.project
             )
-            serializer.save(is_reviewed=False, reviewed_at=None, reviewed_by=None)
+            serializer.save(
+                is_reviewed=False,
+                reviewed_at=None,
+                reviewed_by=None,
+                updated_at=datetime.now()
+            )
 
     def get_serializer_class(self):
         if self.action == 'review':
             return TranslationReviewSerializer
+        elif self.action == 'create':
+            return TranslationCreateSerializer
         return TranslationSerializer
 
     @action(detail=True, methods=['PATCH'])

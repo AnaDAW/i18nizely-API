@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer, ValidationError
+from rest_framework.serializers import ModelSerializer, ValidationError, CharField
 
 from .models import Key
 from translations.serializers import TranslationDetailSerializer
@@ -17,9 +17,25 @@ class KeySerializer(ModelSerializer):
     def validate_name(self, value):
         if ' ' in value:
             raise ValidationError('The key can\'t have spaces.')
+
+        project = self.context['request'].parser_context['kwargs'].get('project_pk')
+        if Key.objects.filter(name=value, project=project).exists():
+            raise ValidationError('Key with this name already exists.')
         return value
 
+
+class KeyCreateSerializer(ModelSerializer):
+    translation = CharField(write_only=True, required=True)
+
+    class Meta:
+        model = Key
+        fields = '__all__'
+        read_only_fields = ['id', 'project', 'created_by', 'created_at', 'updated_at']
+
     def validate_name(self, value):
+        if ' ' in value:
+            raise ValidationError('The key can\'t have spaces.')
+
         project = self.context['request'].parser_context['kwargs'].get('project_pk')
         if Key.objects.filter(name=value, project=project).exists():
             raise ValidationError('Key with this name already exists.')

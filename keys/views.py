@@ -5,8 +5,9 @@ from rest_framework.permissions import IsAuthenticated
 
 from projects.permissions import IsAdminOrDeveloper
 from projects.models import Project, Record
+from translations.models import Translation
 from .models import Key
-from .serializers import KeySerializer
+from .serializers import KeyCreateSerializer, KeySerializer
 
 
 class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin):
@@ -16,6 +17,11 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
     def get_queryset(self):
         return Key.objects.filter(project=self.kwargs['project_pk'])
 
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return KeyCreateSerializer
+        return KeySerializer
+
     def perform_create(self, serializer):
         project = get_object_or_404(Project, id=self.kwargs['project_pk'])
         Record.objects.create(
@@ -23,7 +29,15 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
             user=self.request.user,
             project=project
         )
-        serializer.save(project=project, created_by=self.request.user)
+        translation = serializer.validated_data.pop('translation')
+        key = serializer.save(project=project, created_by=self.request.user)
+        if translation:
+            Translation.objects.create(
+                key=key,
+                created_by=self.request.user,
+                language=project.main_language,
+                text=translation
+            )
 
     def perform_update(self, serializer):
         instance = self.get_object()
@@ -32,7 +46,7 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
             user=self.request.user,
             project=instance.project
         )
-        return super().perform_update(serializer)
+        serializer.save()
 
     def perform_destroy(self, instance):
         Record.objects.create(
