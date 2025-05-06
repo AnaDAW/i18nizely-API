@@ -36,7 +36,7 @@ class CollaboratorCreateSerializer(ModelSerializer):
 
 class ProjectSerializer(ModelSerializer):
     created_by = UserDetailSerializer(many=False, read_only=True)
-    collaborators = CollaboratorCreateSerializer(many=True, read_only=True)
+    collaborators = CollaboratorSerializer(many=True, read_only=True)
 
     class Meta:
         model = Project
