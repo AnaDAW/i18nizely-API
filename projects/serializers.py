@@ -4,7 +4,6 @@ from rest_framework.serializers import ModelSerializer
 
 from .models import Project, Collaborator, Record
 from users.serializers import UserDetailSerializer
-from keys.serializers import KeySerializer
 
 
 class CollaboratorSerializer(ModelSerializer):

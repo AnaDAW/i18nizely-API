@@ -4,6 +4,7 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework.mixins import ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from keys.models import Key
 from .permissions import IsCommentOwner
@@ -24,6 +25,7 @@ class TranslationViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin):
         serializer.save(key=key, created_by=self.request.user)
 
     def perform_update(self, serializer):
+        instance = self.get_object()
         if self.action == 'review':
             is_reviewed = self.request.data.get('is_reviewed')
             if is_reviewed:
@@ -36,7 +38,6 @@ class TranslationViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin):
             else:
                 serializer.save(reviewed_by=None, reviewed_at=None)
         else:
-            instance = self.get_object()
             Version.objects.create(
                 text=instance.text,
                 translation=instance,
@@ -63,7 +64,7 @@ class TranslationViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin):
         return TranslationSerializer
 
     @action(detail=True, methods=['PATCH'])
-    def review(self, request):
+    def review(self, request, project_pk=None, key_pk=None, pk=None):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)

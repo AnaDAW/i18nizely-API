@@ -25,7 +25,7 @@ class ProjectViewSet(ModelViewSet):
         elif self.action == 'collab':
             base_filter = Q(collaborators__user=user)
         else:
-            return Project.objects.filter(Q(created_by=user) | Q(collaborators__user=user))
+            return Project.objects.filter(Q(created_by=user) | Q(collaborators__user=user)).distinct()
 
         name = self.request.query_params.get('name')
         if name:

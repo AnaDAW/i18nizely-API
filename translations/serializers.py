@@ -9,6 +9,8 @@ from users.serializers import UserDetailSerializer
 
 
 class TranslationSerializer(ModelSerializer):
+    created_by = UserDetailSerializer(many=False, read_only=True)
+
     class Meta:
         model = Translation
         fields = ['id', 'text', 'language', 'key', 'created_by', 'created_at', 'updated_at']
@@ -16,6 +18,7 @@ class TranslationSerializer(ModelSerializer):
 
 class TranslationCreateSerializer(ModelSerializer):
     text = CharField(required=True)
+    created_by = UserDetailSerializer(many=False, read_only=True)
     
     class Meta:
         model = Translation
@@ -28,13 +31,14 @@ class TranslationCreateSerializer(ModelSerializer):
             raise ValidationError('Translation with this language already exists.')
 
         project = get_object_or_404(Project, id=self.context['request'].parser_context['kwargs'].get('project_pk'))
-        if value not in project.languages:
+        if value != project.main_language and value not in project.languages:
             raise ValidationError(f'Language \'{value}\' is not enabled for this project.')
         return value
 
 
 class TranslationReviewSerializer(ModelSerializer):
     is_reviewed = BooleanField(required=True)
+    reviewed_by = UserDetailSerializer(many=False, read_only=True)
 
     class Meta:
         model = Translation

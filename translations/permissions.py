@@ -15,7 +15,7 @@ class IsCommentOwner(BasePermission):
                 return True
 
             collaborator = Collaborator.objects.get(user=request.user, project=project)
-            if collaborator.role == Collaborator.Role.ADMIN:
+            if Collaborator.Role.ADMIN in collaborator.roles:
                 return True
 
         if view.action in ['update', 'partial_update', 'destroy']:

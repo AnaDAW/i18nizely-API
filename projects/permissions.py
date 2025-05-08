@@ -18,7 +18,7 @@ class HasProjectPermission(BasePermission):
         if view.action == 'retrieve':
             return True
         elif view.action in ['update', 'partial_update']:
-            return collaborator.role == Collaborator.Role.ADMIN
+            return Collaborator.Role.ADMIN in collaborator.roles
         
         return False
 
@@ -66,7 +66,10 @@ class ProjectRolePermission(BasePermission):
         if action == action_name:
             return True
 
-        return collaborator.role in self.allowed_roles
+        for role in self.allowed_roles:
+            if role in collaborator.roles:
+                return True
+        return False
 
 
 class IsAdmin(ProjectRolePermission):

@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.mixins import ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q
 
 from projects.permissions import IsAdminOrDeveloper
 from projects.models import Project, Record
@@ -15,6 +16,9 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
     permission_classes = [IsAuthenticated, IsAdminOrDeveloper]
 
     def get_queryset(self):
+        name = self.request.query_params.get('name')
+        if name:
+            return Key.objects.filter(Q(project=self.kwargs['project_pk']) & Q(name__icontains=name))
         return Key.objects.filter(project=self.kwargs['project_pk'])
 
     def get_serializer_class(self):

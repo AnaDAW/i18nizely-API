@@ -3,7 +3,7 @@ from django.db import models
 
 
 class Translation(models.Model):
-    text = models.TextField(blank=True)
+    text = models.TextField()
     language = models.CharField(max_length=2)
     key = models.ForeignKey('keys.Key', on_delete=models.CASCADE, related_name='translations')
     is_reviewed = models.BooleanField(default=False)
