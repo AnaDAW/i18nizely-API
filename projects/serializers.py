@@ -1,8 +1,8 @@
 from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, CharField, ListField
 
-from .models import Project, Collaborator, Record
+from .models import Language, Project, Collaborator, Record
 from users.serializers import UserDetailSerializer
 
 
@@ -33,9 +33,17 @@ class CollaboratorCreateSerializer(ModelSerializer):
         return value
 
 
+class LanguageSerializer(ModelSerializer):
+    class Meta:
+        model = Language
+        fields = '__all__'
+
+
 class ProjectSerializer(ModelSerializer):
     created_by = UserDetailSerializer(many=False, read_only=True)
     collaborators = CollaboratorSerializer(many=True, read_only=True)
+    languages = LanguageSerializer(many=True, read_only=True)
+    language_codes = ListField(child=CharField(max_length=2), write_only=True, required=True)
 
     class Meta:
         model = Project

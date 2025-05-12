@@ -15,12 +15,10 @@ class HasProjectPermission(BasePermission):
         except Collaborator.DoesNotExist:
             return False
 
-        if view.action == 'retrieve':
-            return True
-        elif view.action in ['update', 'partial_update']:
+        if view.action in ['update', 'partial_update']:
             return Collaborator.Role.ADMIN in collaborator.roles
         
-        return False
+        return True
 
 
 class ProjectRolePermission(BasePermission):

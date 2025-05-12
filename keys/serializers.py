@@ -17,7 +17,6 @@ class KeySerializer(ModelSerializer):
     def validate_name(self, value):
         if ' ' in value:
             raise ValidationError('The key can\'t have spaces.')
-
         project = self.context['request'].parser_context['kwargs'].get('project_pk')
         if Key.objects.filter(name=value, project=project).exists():
             raise ValidationError('Key with this name already exists.')

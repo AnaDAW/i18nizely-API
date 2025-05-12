@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from keys.models import Key
 from .permissions import IsCommentOwner
 from .models import Translation, Version, Comment
-from projects.models import Record
+from projects.models import Language, Project, Record
 from .serializers import TranslationCreateSerializer, TranslationReviewSerializer, TranslationSerializer, VersionSerializer, CommentSerializer
 from projects.permissions import IsAdminOrTranslator, IsAnyRole
 
@@ -22,20 +22,28 @@ class TranslationViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin):
 
     def perform_create(self, serializer):
         key = get_object_or_404(Key, id=self.kwargs['key_pk'])
+        language = Language.objects.get(project=key.project, code=serializer.validated_data.get('language'))
+        language.translation_count += 1
+        language.save()
         serializer.save(key=key, created_by=self.request.user)
 
     def perform_update(self, serializer):
         instance = self.get_object()
+        language = instance.key.project.languages.get(code=instance.language)
         if self.action == 'review':
             is_reviewed = self.request.data.get('is_reviewed')
-            if is_reviewed:
+            if is_reviewed and not instance.is_reviewed:
                 Record.objects.create(
                     type=6,
                     user=self.request.user,
                     project=instance.key.project
                 )
+                language.reviewed_count += 1
+                language.save()
                 serializer.save(reviewed_by=self.request.user, reviewed_at=datetime.now())
-            else:
+            elif not is_reviewed and instance.is_reviewed:
+                language.reviewed_count -= 1
+                language.save()
                 serializer.save(reviewed_by=None, reviewed_at=None)
         else:
             Version.objects.create(
@@ -49,6 +57,9 @@ class TranslationViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin):
                 user=self.request.user,
                 project=instance.key.project
             )
+            if instance.is_reviewed:
+                language.reviewed_count -= 1
+                language.save()
             serializer.save(
                 is_reviewed=False,
                 reviewed_at=None,

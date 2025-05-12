@@ -34,14 +34,16 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
             project=project
         )
         translation = serializer.validated_data.pop('translation')
-        key = serializer.save(project=project, created_by=self.request.user)
-        if translation:
-            Translation.objects.create(
-                key=key,
-                created_by=self.request.user,
-                language=project.main_language,
-                text=translation
-            )
+        serializer.save(project=project, created_by=self.request.user)
+        Translation.objects.create(
+            key=serializer.instance,
+            created_by=self.request.user,
+            language=project.main_language,
+            text=translation
+        )
+        language = project.languages.get(code=project.main_language)
+        language.translation_count += 1
+        language.save()
 
     def perform_update(self, serializer):
         instance = self.get_object()
@@ -53,9 +55,15 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
         serializer.save()
 
     def perform_destroy(self, instance):
+        project = instance.project
         Record.objects.create(
             type=2,
             user=self.request.user,
-            project=instance.project
+            project=project
         )
+        translations = instance.translations.all()
+        for trans in translations:
+            lang = project.languages.get(code=trans.language)
+            lang.translation_count -= 1
+            lang.save()
         return super().perform_destroy(instance)

@@ -7,12 +7,24 @@ class Project(models.Model):
     description = models.TextField(blank=True)
     created_by = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='created_projects')
     main_language = models.CharField(max_length=2)
-    languages = ArrayField(models.CharField(max_length=2))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+
+
+class Language(models.Model):
+    code = models.CharField(max_length=2)
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='languages')
+    translation_count = models.IntegerField(default=0)
+    reviewed_count = models.IntegerField(default=0)
+
+    class Meta:
+        unique_together = ('code', 'project')
+
+    def __str__(self):
+        return self.code
 
 
 class Collaborator(models.Model):

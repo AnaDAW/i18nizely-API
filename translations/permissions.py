@@ -14,7 +14,7 @@ class IsCommentOwner(BasePermission):
             if project.created_by == request.user:
                 return True
 
-            collaborator = Collaborator.objects.get(user=request.user, project=project)
+            collaborator = Collaborator.objects.filter(user=request.user, project=project)
             if Collaborator.Role.ADMIN in collaborator.roles:
                 return True
 
