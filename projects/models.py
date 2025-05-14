@@ -13,6 +13,13 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+    def get_language_codes(self) -> list:
+        language_codes = []
+        for lang in self.languages.all():
+            language_codes.append(lang.code)
+        return language_codes
+
+
 
 class Language(models.Model):
     code = models.CharField(max_length=2)

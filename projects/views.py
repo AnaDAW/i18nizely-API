@@ -10,7 +10,6 @@ from .models import Language, Project, Collaborator, Record
 from .serializers import CollaboratorSerializer, ProjectDetailSerializer, ProjectSerializer, CollaboratorCreateSerializer, RecordSerializer
 from .permissions import HasProjectPermission, IsAdmin, IsAnyRole
 from users.models import Notification
-from keys.models import Key
 
 
 class ProjectViewSet(ModelViewSet):
@@ -32,9 +31,8 @@ class ProjectViewSet(ModelViewSet):
     def perform_create(self, serializer):
         languages = serializer.validated_data.pop('language_codes')
         languages.append(serializer.validated_data.get('main_language'))
-        languages = list(set(languages))
         serializer.save(created_by=self.request.user)
-        for lang in languages:
+        for lang in set(languages):
             Language.objects.create(
                 code=lang,
                 project=serializer.instance
@@ -49,17 +47,14 @@ class ProjectViewSet(ModelViewSet):
                 languages.append(main_language)
             else:
                 languages.append(instance.main_language)
-            languages = list(set(languages))
-            actual_languages = []
-            for lang in instance.languages.all():
-                actual_languages.append(lang.code)
+            actual_languages = instance.get_language_codes()
             for lang in actual_languages:
                 if not lang in languages:
                     instance.languages.get(code=lang).delete()
                     keys = instance.keys.all()
                     for key in keys:
                         key.translations.filter(language=lang).delete()
-            for lang in languages:
+            for lang in set(languages):
                 if not lang in actual_languages:
                     Language.objects.create(
                         code=lang,
@@ -80,7 +75,7 @@ class ProjectViewSet(ModelViewSet):
         return ProjectSerializer
 
     @action(detail=False, methods=['GET'])
-    def collab(self, request):
+    def collab(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:

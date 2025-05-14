@@ -32,7 +32,7 @@ class UserViewSet(ModelViewSet):
         return []
 
     @action(detail=False, methods=['GET', 'PUT', 'PATCH', 'DELETE'])
-    def profile(self, request):
+    def profile(self, request, *args, **kwargs):
         instance = request.user
         if request.method == 'GET':
             serializer = self.get_serializer(instance)

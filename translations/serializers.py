@@ -29,13 +29,9 @@ class TranslationCreateSerializer(ModelSerializer):
         key = self.context['request'].parser_context['kwargs'].get('key_pk')
         if Translation.objects.filter(key=key, language=value).exists():
             raise ValidationError('Translation with this language already exists.')
-
         project = get_object_or_404(Project, id=self.context['request'].parser_context['kwargs'].get('project_pk'))
-        languages = []
-        for lang in project.languages.all():
-            languages.append(lang.code)
-
-        if value != project.main_language and value not in languages:
+        languages = project.get_language_codes()
+        if value not in languages:
             raise ValidationError(f'Language \'{value}\' is not enabled for this project.')
         return value
 

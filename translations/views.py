@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from keys.models import Key
 from .permissions import IsCommentOwner
 from .models import Translation, Version, Comment
-from projects.models import Language, Project, Record
+from projects.models import Language, Record
 from .serializers import TranslationCreateSerializer, TranslationReviewSerializer, TranslationSerializer, VersionSerializer, CommentSerializer
 from projects.permissions import IsAdminOrTranslator, IsAnyRole
 
@@ -75,7 +75,7 @@ class TranslationViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin):
         return TranslationSerializer
 
     @action(detail=True, methods=['PATCH'])
-    def review(self, request, project_pk=None, key_pk=None, pk=None):
+    def review(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
