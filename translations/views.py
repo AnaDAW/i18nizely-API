@@ -88,6 +88,7 @@ class TranslationViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin):
 class VersionViewSet(GenericViewSet, ListModelMixin):
     serializer_class = VersionSerializer
     permission_classes = [IsAuthenticated, IsAnyRole]
+    pagination_class = None
 
     def get_queryset(self):
         return Version.objects.filter(translation=self.kwargs['translation_pk'])
@@ -96,6 +97,7 @@ class VersionViewSet(GenericViewSet, ListModelMixin):
 class CommentViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin):
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated, IsAnyRole, IsCommentOwner]
+    pagination_class = None
 
     def get_queryset(self):
         return Comment.objects.filter(translation=self.kwargs['translation_pk'])

@@ -100,6 +100,11 @@ class CollaboratorViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, De
         )
         serializer.save(project=project)
 
+    def perform_destroy(self, instance):
+        project = get_object_or_404(Project, id=self.kwargs['project_pk'])
+        instance.user.notifications.filter(project=project).delete()
+        instance.delete()
+
     def get_serializer_class(self):
         if self.action == 'create':
             return CollaboratorCreateSerializer
@@ -109,6 +114,7 @@ class CollaboratorViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, De
 class RecordViewSet(GenericViewSet, ListModelMixin):
     serializer_class = RecordSerializer
     permission_classes = [IsAuthenticated, IsAnyRole]
+    pagination_class = None
 
     def get_queryset(self):
         return Record.objects.filter(project=self.kwargs['project_pk'])

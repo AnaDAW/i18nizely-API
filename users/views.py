@@ -11,6 +11,8 @@ from .serializers import UserCreateSerializer, UserDetailSerializer, UserSeriali
 
 
 class UserViewSet(ModelViewSet):
+    pagination_class = None
+
     def get_queryset(self):
         name = self.request.query_params.get('name')
         if self.action == 'list' and name:
@@ -52,6 +54,7 @@ class UserViewSet(ModelViewSet):
 
 class NotificationViewSet(GenericViewSet, ListModelMixin, DestroyModelMixin):
     serializer_class = NotificationSerializer
+    pagination_class = None
 
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user)

@@ -102,6 +102,8 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
             formated_key = self.format_key(key)
             key_name += formated_key
             if isinstance(body[key], str):
+                if not body[key]:
+                    continue
                 try:
                     language = project.languages.get(code=lang)
                     actual_key = project.keys.get(name=key_name)
@@ -182,17 +184,13 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
 
     @action(detail=False, methods=['GET'], url_path='export')
     def export_keys(self, request, *args, **kwargs):
-        type_list = request.query_params.get('file_type')
-        language_list = request.query_params.get('languages')
+        file_types = request.query_params.getlist('file_type')
+        languages = request.query_params.getlist('languages')
         only_reviewed = request.query_params.get('only_reviewed') in ['True', 'true', '1']
         project = get_object_or_404(Project, id=kwargs['project_pk'])
-        if language_list:
-            languages = set(language_list.split(','))
-        else:
+        if not languages:
             languages = project.get_language_codes()
-        if type_list:
-            file_types = set(type_list.split(','))
-        else:
+        if not file_types:
             file_types = ['json', 'arb']
         buffer = io.BytesIO()
         writer = ZipFile(buffer, 'w')
@@ -222,6 +220,8 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
             if not translation or (only_reviewed and not translation.is_reviewed):
                 continue
             text = translation.text
+            if not text:
+                continue
             if file_type == 'json':
                 self.format_json(formated_file, name_list, text)
             elif file_type == 'arb':
