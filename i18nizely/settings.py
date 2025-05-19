@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-(da$&9*1d@u!!(4r$2)$gwxpjy!0w$cuj-+wmyhha62!trbw+5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'channels',
     'users',
     'projects',
     'keys',
@@ -76,6 +77,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'i18nizely.wsgi.application'
 
+ASGI_APPLICATION = 'i18nizely.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -155,3 +157,13 @@ SIMPLE_JWT = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer', # only for development
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        # 'CONFIG': {
+        #     "hosts": [("127.0.0.1", 6379)],
+        # },
+    },
+}

@@ -5,6 +5,8 @@ from rest_framework.mixins import ListModelMixin, CreateModelMixin, UpdateModelM
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 from keys.models import Key
 from .permissions import IsCommentOwner
@@ -20,12 +22,26 @@ class TranslationViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin):
     def get_queryset(self):
         return Translation.objects.filter(key=self.kwargs['key_pk'])
 
+    def send_notification(self, project_id: int, type: str, data):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'project_{project_id}',
+            {
+                'type': 'send_notification',
+                'data': {
+                    'type': f'translation.{type}',
+                    'data': data
+                }
+            }
+        )
+
     def perform_create(self, serializer):
         key = get_object_or_404(Key, id=self.kwargs['key_pk'])
         language = Language.objects.get(project=key.project, code=serializer.validated_data.get('language'))
         language.translation_count += 1
         language.save()
         serializer.save(key=key, created_by=self.request.user)
+        self.send_notification(project_id=key.project.id, type='create', data=serializer.data)
 
     def perform_update(self, serializer):
         instance = self.get_object()
@@ -66,6 +82,7 @@ class TranslationViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin):
                 reviewed_by=None,
                 updated_at=datetime.now()
             )
+        self.send_notification(project_id=instance.key.project.id, type='update', data=serializer.data)
 
     def get_serializer_class(self):
         if self.action == 'review':

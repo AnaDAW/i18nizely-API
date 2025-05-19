@@ -10,10 +10,13 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.http import HttpResponse
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 from projects.permissions import IsAdminOrDeveloper
 from projects.models import Project, Record, Language
 from translations.models import Translation, Version
+from translations.serializers import TranslationSerializer
 from .models import Key
 from .serializers import KeyCreateSerializer, KeySerializer
 from users.models import User
@@ -33,6 +36,19 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
             return KeyCreateSerializer
         return KeySerializer
 
+    def send_notification(self, project_id: int, type: str, data):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'project_{project_id}',
+            {
+                'type': 'send_notification',
+                'data': {
+                    'type': f'key.{type}',
+                    'data': data
+                }
+            }
+        )
+
     def perform_create(self, serializer):
         project = get_object_or_404(Project, id=self.kwargs['project_pk'])
         Record.objects.create(
@@ -51,6 +67,7 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
         language = project.languages.get(code=project.main_language)
         language.translation_count += 1
         language.save()
+        self.send_notification(project_id=project.id, type='create', data=serializer.data)
 
     def perform_update(self, serializer):
         instance = self.get_object()
@@ -60,6 +77,7 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
             project=instance.project
         )
         serializer.save()
+        self.send_notification(project_id=instance.project.id, type='update', data=serializer.data)
 
     def perform_destroy(self, instance):
         project = instance.project
@@ -73,7 +91,8 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
             lang = project.languages.get(code=trans.language)
             lang.translation_count -= 1
             lang.save()
-        return super().perform_destroy(instance)
+        self.send_notification(project_id=project.id, type='destroy', data=instance.id)
+        instance.delete()
     
     @action(detail=False, methods=['POST'], url_path='import')
     def import_keys(self, request, *args, **kwargs):
@@ -92,6 +111,7 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
             except Exception as e:
                 return Response({'detail': 'File type not allowed.', 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(saved_keys, many=True)
+        self.send_notification(project_id=project.id, type='import', data=serializer.data)
         return Response(serializer.data)
 
     def save_keys(self, user: User, project: Project, lang: str, body: dict, key_name: str = ''):

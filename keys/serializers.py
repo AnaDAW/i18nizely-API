@@ -25,6 +25,7 @@ class KeySerializer(ModelSerializer):
 
 class KeyCreateSerializer(ModelSerializer):
     translation = CharField(write_only=True, required=True)
+    translations = TranslationDetailSerializer(many=True, read_only=True)
     created_by = UserDetailSerializer(many=False, read_only=True)
 
     class Meta:

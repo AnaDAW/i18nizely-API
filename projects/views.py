@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 from .models import Language, Project, Collaborator, Record
 from .serializers import CollaboratorSerializer, ProjectDetailSerializer, ProjectSerializer, CollaboratorCreateSerializer, RecordSerializer
@@ -27,6 +29,19 @@ class ProjectViewSet(ModelViewSet):
         if name:
             base_filter &= Q(name__icontains=name)
         return Project.objects.filter(base_filter)
+
+    def send_notification(self, project_id: int, type: str, data):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'project_{project_id}',
+            {
+                'type': 'send_notification',
+                'data': {
+                    'type': f'project.{type}',
+                    'data': data
+                }
+            }
+        )
 
     def perform_create(self, serializer):
         languages = serializer.validated_data.pop('language_codes')
@@ -61,13 +76,17 @@ class ProjectViewSet(ModelViewSet):
                         project=instance
                     )
         serializer.save()
+        self.send_notification(project_id=serializer.instance.id, type='update', data=serializer.data)
 
     def perform_destroy(self, instance):
         user = self.request.user
         if instance.created_by == user:
+            self.send_notification(project_id=instance.id, type='destroy', data=instance.id)
             instance.delete()
         else:
-            instance.collaborators.get(user=user).delete()
+            collaborator = instance.collaborators.get(user=user)
+            self.send_notification(project_id=instance.id, type='collab', data=collaborator.id)
+            collaborator.delete()
 
     def get_serializer_class(self):
         if self.action in ['list', 'collab']:
@@ -91,6 +110,19 @@ class CollaboratorViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, De
     def get_queryset(self):
         return Collaborator.objects.filter(project=self.kwargs['project_pk'])
 
+    def send_notification(self, project_id: int, type: str, data):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'project_{project_id}',
+            {
+                'type': 'send_notification',
+                'data': {
+                    'type': f'collaborator.{type}',
+                    'data': data
+                }
+            }
+        )
+
     def perform_create(self, serializer):
         project = get_object_or_404(Project, id=self.kwargs['project_pk'])
         Notification.objects.create(
@@ -99,11 +131,17 @@ class CollaboratorViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, De
             project=project
         )
         serializer.save(project=project)
+        self.send_notification(project_id=project.id, type='create', data=serializer.data)
 
     def perform_destroy(self, instance):
         project = get_object_or_404(Project, id=self.kwargs['project_pk'])
         instance.user.notifications.filter(project=project).delete()
+        self.send_notification(project_id=project.id, type='destroy', data=instance.id)
         instance.delete()
+
+    def perform_update(self, serializer):
+        serializer.save()
+        self.send_notification(project_id=serializer.instance.project.id, type='update', data=serializer.data)
 
     def get_serializer_class(self):
         if self.action == 'create':
