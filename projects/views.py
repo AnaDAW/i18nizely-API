@@ -85,6 +85,7 @@ class ProjectViewSet(ModelViewSet):
             instance.delete()
         else:
             collaborator = instance.collaborators.get(user=user)
+            collaborator.user.notifications.filter(project=instance).delete()
             self.send_notification(project_id=instance.id, type='collab', data=collaborator.id)
             collaborator.delete()
 
