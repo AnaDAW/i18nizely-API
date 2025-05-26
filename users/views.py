@@ -31,7 +31,7 @@ class UserViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action == 'profile':
             return super().get_permissions()
-        return []
+        return [] # only for development
 
     @action(detail=False, methods=['GET', 'PUT', 'PATCH', 'DELETE'])
     def profile(self, request, *args, **kwargs):
@@ -58,3 +58,11 @@ class NotificationViewSet(GenericViewSet, ListModelMixin, DestroyModelMixin):
 
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user)
+
+    @action(detail=True, methods=['GET'])
+    def read(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_read = True
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)

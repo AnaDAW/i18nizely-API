@@ -111,6 +111,11 @@ class CollaboratorViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, De
     def get_queryset(self):
         return Collaborator.objects.filter(project=self.kwargs['project_pk'])
 
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CollaboratorCreateSerializer
+        return CollaboratorSerializer
+
     def send_notification(self, project_id: int, type: str, data):
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
@@ -132,7 +137,8 @@ class CollaboratorViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, De
             project=project
         )
         serializer.save(project=project)
-        self.send_notification(project_id=project.id, type='create', data=serializer.data)
+        collaborator = CollaboratorSerializer(serializer.instance)
+        self.send_notification(project_id=project.id, type='create', data=collaborator.data)
 
     def perform_destroy(self, instance):
         project = get_object_or_404(Project, id=self.kwargs['project_pk'])
@@ -143,11 +149,6 @@ class CollaboratorViewSet(GenericViewSet, CreateModelMixin, UpdateModelMixin, De
     def perform_update(self, serializer):
         serializer.save()
         self.send_notification(project_id=serializer.instance.project.id, type='update', data=serializer.data)
-
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return CollaboratorCreateSerializer
-        return CollaboratorSerializer
 
 
 class RecordViewSet(GenericViewSet, ListModelMixin):

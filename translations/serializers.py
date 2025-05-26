@@ -10,20 +10,23 @@ from users.serializers import UserDetailSerializer
 
 class TranslationSerializer(ModelSerializer):
     created_by = UserDetailSerializer(many=False, read_only=True)
+    reviewed_by = UserDetailSerializer(many=False, read_only=True)
 
     class Meta:
         model = Translation
-        fields = ['id', 'text', 'language', 'key', 'created_by', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'language', 'key', 'created_by', 'created_at', 'updated_at']
+        fields = '__all__'
+        read_only_fields = ['id', 'language', 'key', 'is_reviewed', 'reviewed_by', 'reviewed_at', 'created_by', 'created_at', 'updated_at']
+
 
 class TranslationCreateSerializer(ModelSerializer):
     text = CharField(required=True)
     created_by = UserDetailSerializer(many=False, read_only=True)
-    
+    reviewed_by = UserDetailSerializer(many=False, read_only=True)
+
     class Meta:
         model = Translation
-        fields = ['id', 'text', 'language', 'key', 'created_by', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'key', 'created_by', 'created_at', 'updated_at']
+        fields = '__all__'
+        read_only_fields = ['id', 'key', 'is_reviewed', 'reviewed_by', 'reviewed_at', 'created_by', 'created_at', 'updated_at']
 
     def validate_language(self, value):
         key = self.context['request'].parser_context['kwargs'].get('key_pk')
@@ -38,12 +41,13 @@ class TranslationCreateSerializer(ModelSerializer):
 
 class TranslationReviewSerializer(ModelSerializer):
     is_reviewed = BooleanField(required=True)
+    created_by = UserDetailSerializer(many=False, read_only=True)
     reviewed_by = UserDetailSerializer(many=False, read_only=True)
 
     class Meta:
         model = Translation
-        fields = ['is_reviewed', 'reviewed_by', 'reviewed_at']
-        read_only_fields = ['reviewed_by', 'reviewed_at']
+        fields = '__all__'
+        read_only_fields = ['id', 'language', 'text', 'key', 'reviewed_by', 'reviewed_at', 'created_by', 'created_at', 'updated_at']
 
 
 class TranslationDetailSerializer(ModelSerializer):

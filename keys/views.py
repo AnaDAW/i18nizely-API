@@ -15,6 +15,7 @@ from asgiref.sync import async_to_sync
 
 from projects.permissions import IsAdminOrDeveloper
 from projects.models import Project, Record, Language
+from projects.serializers import LanguageSerializer
 from translations.models import Translation, Version
 from translations.serializers import TranslationSerializer
 from .models import Key
@@ -67,6 +68,7 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
         language = project.languages.get(code=project.main_language)
         language.translation_count += 1
         language.save()
+        self.send_notification(project_id=project.id, type='language', data=LanguageSerializer(language).data)
         self.send_notification(project_id=project.id, type='create', data=serializer.data)
 
     def perform_update(self, serializer):
@@ -87,10 +89,13 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
             project=project
         )
         translations = instance.translations.all()
+        languages = []
         for trans in translations:
             lang = project.languages.get(code=trans.language)
             lang.translation_count -= 1
             lang.save()
+            languages.append(lang)
+        self.send_notification(project_id=project.id, type='languages', data=LanguageSerializer(languages, many=True).data)
         self.send_notification(project_id=project.id, type='destroy', data=instance.id)
         instance.delete()
     
@@ -111,6 +116,7 @@ class KeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
             except Exception as e:
                 return Response({'detail': 'File type not allowed.', 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         serializer = self.get_serializer(saved_keys, many=True)
+        self.send_notification(project_id=project.id, type='languages', data=LanguageSerializer(project.languages.all(), many=True).data)
         self.send_notification(project_id=project.id, type='import', data=serializer.data)
         return Response(serializer.data)
 

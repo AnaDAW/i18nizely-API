@@ -34,7 +34,8 @@ class UserCreateSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'first_name', 'last_name']
+        fields = ['id', 'email', 'password', 'first_name', 'last_name', 'image', 'language', 'format_24h', 'date_format', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'image', 'language', 'format_24h', 'date_format', 'created_at', 'updated_at']
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -55,7 +56,12 @@ class UserDetailSerializer(ModelSerializer):
         fields = ['id', 'first_name', 'last_name', 'image']
 
 
+from projects.serializers import ProjectDetailSerializer
+
+
 class NotificationSerializer(ModelSerializer):
+    project = ProjectDetailSerializer(many=False, read_only=True)
+
     class Meta:
         model = Notification
         fields = '__all__'
