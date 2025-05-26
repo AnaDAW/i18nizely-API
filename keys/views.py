@@ -17,7 +17,6 @@ from projects.permissions import IsAdminOrDeveloper
 from projects.models import Project, Record, Language
 from projects.serializers import LanguageSerializer
 from translations.models import Translation, Version
-from translations.serializers import TranslationSerializer
 from .models import Key
 from .serializers import KeyCreateSerializer, KeySerializer
 from users.models import User

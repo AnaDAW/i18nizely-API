@@ -20,7 +20,6 @@ class Project(models.Model):
         return language_codes
 
 
-
 class Language(models.Model):
     code = models.CharField(max_length=2)
     project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='languages')

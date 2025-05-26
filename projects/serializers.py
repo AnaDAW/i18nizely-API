@@ -2,6 +2,8 @@ from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
 from rest_framework.serializers import ModelSerializer, CharField, ListField
 
+from utils.language_util import LanguageUtil
+
 from .models import Language, Project, Collaborator, Record
 from users.serializers import UserDetailSerializer
 
@@ -49,6 +51,20 @@ class ProjectSerializer(ModelSerializer):
         model = Project
         fields = '__all__'
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+
+    def validate_main_language(self, value):
+        if not value in LanguageUtil.language_codes:
+            raise ValidationError('The language is not supported or not exists.')
+        return value
+
+    def validate_language_codes(self, value):
+        languages = []
+        for lang in value:
+            if lang in LanguageUtil.language_codes:
+                languages.append(lang)
+        if not languages:
+            raise ValidationError('Languages not supported or not exists.')
+        return languages
 
 
 class ProjectDetailSerializer(ModelSerializer):
